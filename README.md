@@ -2,6 +2,8 @@
 
 Compile-time event system for Unity using C# [Source Generators](https://docs.unity3d.com/Manual/roslyn-analyzers.html)
 
+Methods marked will certain attributes will automatically receive events, without using reflection or IL weaving.
+
 ### Heads Up!
 This is **bare minimum** working code!
 
