@@ -34,7 +34,7 @@ public class ItemInit
     {
         RegisterItemsEvent @event = e as RegisterItemsEvent;
         @event.items.Add(new Item { name = "Sword" });
-        @event.items.Add(new Item { name = "Bottle O' Jizz" });
+        @event.items.Add(new Item { name = "Iron Ore" });
     }
 }
 
@@ -42,10 +42,10 @@ public class ItemInit
 public class SomeOtherItemInitIDK
 {
     [VVEventHandler(typeof(RegisterItemsEvent))]
-    public static void AnyNameHereDontMatter(VVEvent e)
+    public static void AnyNameHereDoesntMatter(VVEvent e)
     {
         RegisterItemsEvent @event = e as RegisterItemsEvent;
-        @event.items.Add(new Item { name = "Bag of Feces" });
+        @event.items.Add(new Item { name = "Bag of Gold" });
         @event.items.Add(new Item { name = "Pickaxe" });
     }
 }
