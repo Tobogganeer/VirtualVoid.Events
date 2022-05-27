@@ -11,7 +11,6 @@ It will likely fail under slight deviances, you are encouraged to edit the sourc
 
 Add try/catch blocks, increase robustness, I plan to update this repo but it's not perfect!
 
-<!-- Test? -->
 ---
 
 Change the namespace to whatever you'd like, but the default is
@@ -37,12 +36,19 @@ And receive those events
 [VVEventSubscriber]
 class SomeEventReceiver // ... Doesn't need to be a monobehaviour!
 {
-  // Handle only specific kinds of events
+  // Specify the type manually...
   [VVEventHandler(typeof(MyCustomEvent))]
   public static void HandleMyEvent(VVEvent e)
   {
     MyCustomEvent myEvent = e as MyCustomEvent;
     
+    // Code here
+  }
+  
+  // Or use the method argument...
+  [VVEventHandler]
+  public static void HandleMyEvent_WithStyle(MyCustomEvent e)
+  {
     // Code here
   }
 }
