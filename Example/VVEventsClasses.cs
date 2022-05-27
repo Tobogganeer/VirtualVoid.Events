@@ -32,8 +32,6 @@ namespace VirtualVoid.Events
         private static readonly Dictionary<Type, Action<VirtualVoid.Events.VVEvent>> subscribers = new Dictionary<Type, Action<VirtualVoid.Events.VVEvent>>();
         private static readonly HashSet<string> perTypeEvents = new HashSet<string>();
 
-        private static Action<VirtualVoid.Events.VVEvent> event_VVEvent;
-
         internal static void Send(VirtualVoid.Events.VVEvent e)
         {
             InitIfNecessary();
