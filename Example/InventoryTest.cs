@@ -16,7 +16,7 @@ public class InventoryTest : MonoBehaviour
     }
 }
 
-public class RegisterItemsEvent : VVEvent
+internal class RegisterItemsEvent : VVEvent
 {
     public List<Item> items = new List<Item>();
 }
@@ -30,11 +30,11 @@ public class Item
 public class ItemInit
 {
     [VVEventHandler(typeof(RegisterItemsEvent))]
-    public static void OnRegisterItems(VVEvent e)
+    internal static void OnRegisterItems(VVEvent e)
     {
         RegisterItemsEvent @event = e as RegisterItemsEvent;
         @event.items.Add(new Item { name = "Sword" });
-        @event.items.Add(new Item { name = "Iron Ore" });
+        @event.items.Add(new Item { name = "Chestplate" });
     }
 }
 
@@ -42,10 +42,17 @@ public class ItemInit
 public class SomeOtherItemInitIDK
 {
     [VVEventHandler(typeof(RegisterItemsEvent))]
-    public static void AnyNameHereDoesntMatter(VVEvent e)
+    internal static void AnyNameHereDontMatter(VVEvent e)
     {
         RegisterItemsEvent @event = e as RegisterItemsEvent;
         @event.items.Add(new Item { name = "Bag of Gold" });
         @event.items.Add(new Item { name = "Pickaxe" });
+    }
+
+    [VVEventHandler]
+    internal static void PerTypeTest(RegisterItemsEvent e)
+    {
+        Debug.Log("Im also getting this! Per Type!");
+        e.items.Add(new Item { name = "Extra Cool B)" });
     }
 }

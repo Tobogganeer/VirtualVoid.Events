@@ -1,4 +1,5 @@
 ﻿#define DISABLE_CLASSGEN
+#define PER_TYPE_EVENTS
 
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
@@ -82,16 +83,39 @@ using System.Collections.Generic;
 
 namespace VirtualVoid.Events
 {
-    public static partial class VVEventBus
+    internal partial class VVEvent { }
+    //class VVEvent { }
+
+    internal static partial class VVEventBus
     {
-        internal static partial void InitIfNecessary()
+        static bool inited = false;
+
+        //static partial void InitIfNecessary()
+        private static void InitIfNecessary()
         {
             if (!inited)
             {
                 inited = true;
 ";
 
+        const string EventBusStringMid1 = @"
+            }
+        }
+
+";
+
+        const string EventBusStringMid2 = @"
+        //static partial void SendPerType(Type t, VirtualVoid.Events.VVEvent e)
+        private static void SendPerType(Type t, VirtualVoid.Events.VVEvent e)
+        {
+            string str = t.ToString();
+            switch (str)
+            {
+";
+
         const string EventBusStringEnd = @"
+                default:
+                    break;
             }
         }
     }
@@ -107,33 +131,87 @@ namespace VirtualVoid.Events
 
             EventSubscriberReceiver receiver = (EventSubscriberReceiver)context.SyntaxReceiver;
             List<EventHandlerMethodDescription> events = receiver.methods;
+            List<EventHandlerMethodDescription> defaultEvents = new List<EventHandlerMethodDescription>();
+            List<EventHandlerMethodDescription> perTypeEvents = new List<EventHandlerMethodDescription>();
             List<string> checkedMethods = receiver.checkedMethods;
-
-            /*
-            string srcThing = @"
-namespace VirtualVoid.Events
-{
-    public static class VVDataTransfer
-    { 
-        public const string AllTypes = """ +
-string.Join(", ", checkedMethods) + " " + events[0].attribDec.ArgumentList?.Arguments[0].Expression.ToString() + @""";
-    }
-}
-";
-            context.AddSource("VVEventsDataTransfer.cs", SourceText.From(srcThing, Encoding.UTF8));
-            */
 
             StringBuilder eventBusBuilder = new StringBuilder(EventBusStringStart);
 
+            // Sort event types
             for (int i = 0; i < events.Count; i++)
             {
-                string attribArg = events[i].attribDec.ArgumentList?.Arguments[0].Expression.ToString();
-                eventBusBuilder.Append("\t\t\t\tVVEventBus.RegisterHandler(");
-                eventBusBuilder.Append(attribArg);
-                eventBusBuilder.Append(", ");
-                eventBusBuilder.Append(events[i].classDec.Identifier.Text + "." + events[i].methodDec.Identifier.Text);
-                eventBusBuilder.AppendLine(");");
+                if (events[i].attribDec.ArgumentList != null
+                    && events[i].attribDec.ArgumentList.Arguments.Count > 0
+                    && events[i].attribDec.ArgumentList.Arguments[0].Expression.ToString().Length > 1)
+                    defaultEvents.Add(events[i]);
+                else
+                    perTypeEvents.Add(events[i]);
             }
+
+            // Register default event types
+
+            for (int i = 0; i < defaultEvents.Count; i++)
+            {
+                string attribArg = defaultEvents[i].attribDec.ArgumentList?.Arguments[0].Expression.ToString();
+                string methodFullName = defaultEvents[i].classDec.Identifier.Text + "." + defaultEvents[i].methodDec.Identifier.Text;
+                eventBusBuilder.AppendLine($"\t\t\t\tVVEventBus.RegisterHandler({attribArg}, {methodFullName});");
+            }
+
+            eventBusBuilder.AppendLine();
+
+            // Add per-type types to hashset
+
+            HashSet<string> types = new HashSet<string>();
+
+            for (int i = 0; i < perTypeEvents.Count; i++)
+            {
+                string type = perTypeEvents[i].methodDec.ParameterList?.Parameters[0].Type.ToString();
+                if (!types.Contains(type))
+                    types.Add(type);
+                //eventBusBuilder.AppendLine($"\t\t\t\tperTypeEvents");
+                //eventBusBuilder.AppendLine($"UnityEngine.Debug.Log($\"Per-Type: {typeThing}\");");
+            }
+
+            foreach (string _type in types)
+            {
+                eventBusBuilder.AppendLine($"\t\t\t\tperTypeEvents.Add(\"{_type}\");");
+            }
+
+            eventBusBuilder.AppendLine();
+
+            // Subscribe per-type events
+
+            for (int i = 0; i < perTypeEvents.Count; i++)
+            {
+                string type = perTypeEvents[i].methodDec.ParameterList?.Parameters[0].Type.ToString();
+                string methodFullName = perTypeEvents[i].classDec.Identifier.Text + "." + perTypeEvents[i].methodDec.Identifier.Text;
+                eventBusBuilder.AppendLine($"\t\t\t\tevent_{type} += {methodFullName};");
+            }
+
+            eventBusBuilder.AppendLine(EventBusStringMid1);
+
+            // Generate per-type type actions
+
+            foreach (string _type in types)
+            {
+                eventBusBuilder.AppendLine($"\t\tprivate static event Action<{_type}> event_{_type};");
+            }
+
+            eventBusBuilder.AppendLine(EventBusStringMid2);
+
+            // Send per-type type actions out
+
+            foreach (string _type in types)
+            {
+                eventBusBuilder.AppendLine($"\t\t\t\tcase \"{_type}\":");
+                eventBusBuilder.AppendLine($"\t\t\t\t\tevent_{_type}?.Invoke(e as {_type});");
+                eventBusBuilder.AppendLine($"\t\t\t\t\tbreak;");
+            }
+
+            //for (int i = 0; i < length; i++)
+            //{
+            //
+            //}
 
             eventBusBuilder.AppendLine(EventBusStringEnd);
 

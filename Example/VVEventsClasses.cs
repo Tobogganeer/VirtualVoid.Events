@@ -4,12 +4,14 @@ using System.Collections.Generic;
 namespace VirtualVoid.Events
 {
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = true)]
-    public class VVEventSubscriberAttribute : Attribute { }
+    internal class VVEventSubscriberAttribute : Attribute { }
 
     [AttributeUsage(AttributeTargets.Method)]
-    public class VVEventHandlerAttribute : Attribute
+    internal class VVEventHandlerAttribute : Attribute
     {
-        public Type type;
+        internal Type type;
+
+        internal VVEventHandlerAttribute() { }
 
         internal VVEventHandlerAttribute(Type eventType)
         {
@@ -17,46 +19,57 @@ namespace VirtualVoid.Events
         }
     }
 
-    public class VVEvent
+    internal partial class VVEvent
     {
-        public static void Send(VirtualVoid.Events.VVEvent e)
+        internal static void Send(VirtualVoid.Events.VVEvent e)
         {
             VVEventBus.Send(e);
         }
     }
 
-    public static partial class VVEventBus
+    internal static partial class VVEventBus
     {
-        internal static readonly Dictionary<Type, Action<VirtualVoid.Events.VVEvent>> subscribers = new Dictionary<Type, Action<VirtualVoid.Events.VVEvent>>();
-        internal static bool inited = false;
+        private static readonly Dictionary<Type, Action<VirtualVoid.Events.VVEvent>> subscribers = new Dictionary<Type, Action<VirtualVoid.Events.VVEvent>>();
+        private static readonly HashSet<string> perTypeEvents = new HashSet<string>();
 
-        public static void Send(VirtualVoid.Events.VVEvent e)
+        private static Action<VirtualVoid.Events.VVEvent> event_VVEvent;
+
+        internal static void Send(VirtualVoid.Events.VVEvent e)
         {
             InitIfNecessary();
-            if (subscribers.TryGetValue(e.GetType(), out Action<VirtualVoid.Events.VVEvent> action))
+            Type t = e.GetType();
+            if (subscribers.TryGetValue(t, out Action<VirtualVoid.Events.VVEvent> action))
                 action?.Invoke(e);
+            if (perTypeEvents.Contains(t.ToString()))
+                SendPerType(t, e);
         }
 
-        public static void RegisterHandler(Type type, Action<VirtualVoid.Events.VVEvent> handler)
+        internal static void RegisterHandler(Type type, Action<VirtualVoid.Events.VVEvent> handler)
         {
             InitIfNecessary();
             if (!subscribers.ContainsKey(type)) subscribers[type] = handler;
             else subscribers[type] += handler;
         }
 
-        public static void DeregisterHandler(Type type, Action<VirtualVoid.Events.VVEvent> handler)
+        internal static void DeregisterHandler(Type type, Action<VirtualVoid.Events.VVEvent> handler)
         {
             InitIfNecessary();
             if (subscribers.ContainsKey(type))
                 subscribers[type] -= handler;
         }
 
-        public static int GetNumSubscribers()
+        internal static int GetNumSubscribers()
         {
             InitIfNecessary();
             return subscribers.Count;
         }
 
-        internal static partial void InitIfNecessary();
+        //static partial void InitIfNecessary();
+
+        //static partial void SendPerType(Type t);
+
+        //internal static void InitIfNecessary() { }
+
+        //internal static void SendPerType(Type t) { }
     }
 }
