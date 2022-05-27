@@ -36,21 +36,23 @@ And receive those events
 [VVEventSubscriber]
 class SomeEventReceiver // ... Doesn't need to be a monobehaviour!
 {
-  // Specify the type manually...
+  // Use the method argument...
+  [VVEventHandler]
+  public static void HandleMyEvent(MyCustomEvent e)
+  {
+    // Code here
+  }
+
+  // Or specify the type manually...
   [VVEventHandler(typeof(MyCustomEvent))]
-  public static void HandleMyEvent(VVEvent e)
+  public static void HandleMyEvent_Manual(VVEvent e)
   {
     MyCustomEvent myEvent = e as MyCustomEvent;
     
     // Code here
   }
   
-  // Or use the method argument...
-  [VVEventHandler]
-  public static void HandleMyEvent_WithStyle(MyCustomEvent e)
-  {
-    // Code here
-  }
+  
 }
 ```
 
