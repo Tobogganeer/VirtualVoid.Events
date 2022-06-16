@@ -106,17 +106,20 @@ namespace VirtualVoid.Events
 
         const string EventBusStringMid2 = @"
         //static partial void SendPerType(Type t, VirtualVoid.Events.VVEvent e)
-        private static void SendPerType(Type t, VirtualVoid.Events.VVEvent e)
+        private static void SendPerType(Type type, VirtualVoid.Events.VVEvent e)
         {
-            string str = t.ToString();
-            switch (str)
-            {
+            if (perTypeCallbackDict.TryGetValue(type, out Action<VVEvent> callback))
+                callback(e);
+            else
+                Console.WriteLine(""No callback for event "" + type.Name);
+            //switch (type)
+            //{
 ";
 
         const string EventBusStringEnd = @"
-                default:
-                    break;
-            }
+            //    default:
+            //        break;
+            //}
         }
     }
 }
@@ -172,12 +175,12 @@ namespace VirtualVoid.Events
                 //eventBusBuilder.AppendLine($"UnityEngine.Debug.Log($\"Per-Type: {typeThing}\");");
             }
 
-            foreach (string _type in types)
-            {
-                eventBusBuilder.AppendLine($"\t\t\t\tperTypeEvents.Add(\"{_type}\");");
-            }
+            //foreach (string _type in types)
+            //{
+            //    eventBusBuilder.AppendLine($"\t\t\t\tperTypeEvents.Add(\"typeof({_type})\");");
+            //}
 
-            eventBusBuilder.AppendLine();
+            //eventBusBuilder.AppendLine();
 
             // Subscribe per-type events
 
@@ -185,28 +188,51 @@ namespace VirtualVoid.Events
             {
                 string type = perTypeEvents[i].methodDec.ParameterList?.Parameters[0].Type.ToString();
                 string methodFullName = perTypeEvents[i].classDec.Identifier.Text + "." + perTypeEvents[i].methodDec.Identifier.Text;
+                // For generics
+                type = type.Replace('<', '_').Replace(">", "");
                 eventBusBuilder.AppendLine($"\t\t\t\tevent_{type} += {methodFullName};");
             }
 
+            // Create dictionary for callbacks
+
+            eventBusBuilder.AppendLine();
+
             eventBusBuilder.AppendLine(EventBusStringMid1);
+
+            eventBusBuilder.AppendLine($"\t\t\tprivate static Dictionary<Type, Action<VVEvent>> perTypeCallbackDict = new Dictionary<Type, Action<VVEvent>>()");
+            eventBusBuilder.AppendLine($"\t\t\t{{");
+
+            for (int i = 0; i < perTypeEvents.Count; i++)
+            {
+                string type = perTypeEvents[i].methodDec.ParameterList?.Parameters[0].Type.ToString();
+                // For generics
+                string fixedType = type.Replace('<', '_').Replace(">", "");
+                eventBusBuilder.AppendLine($"\t\t\t\t{{ typeof({type}), (evnt) => event_{fixedType}(evnt as {type}) }},");
+            }
+
+            eventBusBuilder.AppendLine($"\t\t\t}};");
 
             // Generate per-type type actions
 
             foreach (string _type in types)
             {
-                eventBusBuilder.AppendLine($"\t\tprivate static event Action<{_type}> event_{_type};");
+                string fixedType = _type.Replace('<', '_').Replace(">", "");
+                eventBusBuilder.AppendLine($"\t\tprivate static event Action<{_type}> event_{fixedType};");
             }
 
             eventBusBuilder.AppendLine(EventBusStringMid2);
 
             // Send per-type type actions out
 
+            /*
             foreach (string _type in types)
             {
-                eventBusBuilder.AppendLine($"\t\t\t\tcase \"{_type}\":");
-                eventBusBuilder.AppendLine($"\t\t\t\t\tevent_{_type}?.Invoke(e as {_type});");
+                string fixedType = _type.Replace('<', '_').Replace(">", "");
+                eventBusBuilder.AppendLine($"\t\t\t\tcase typeof({_type}):");
+                eventBusBuilder.AppendLine($"\t\t\t\t\tevent_{fixedType}?.Invoke(e as {_type});");
                 eventBusBuilder.AppendLine($"\t\t\t\t\tbreak;");
             }
+            */
 
             //for (int i = 0; i < length; i++)
             //{
