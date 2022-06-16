@@ -30,11 +30,7 @@ namespace VirtualVoid.Events
     internal static partial class VVEventBus
     {
         private static readonly Dictionary<Type, Action<VirtualVoid.Events.VVEvent>> subscribers = new Dictionary<Type, Action<VirtualVoid.Events.VVEvent>>();
-<<<<<<< Updated upstream
-        private static readonly HashSet<string> perTypeEvents = new HashSet<string>();
-=======
         //private static readonly HashSet<string> perTypeEvents = new HashSet<string>();
->>>>>>> Stashed changes
 
         internal static void Send(VirtualVoid.Events.VVEvent e)
         {
